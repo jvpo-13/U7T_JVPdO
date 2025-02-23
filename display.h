@@ -231,7 +231,15 @@ static inline int GetFontIndex(uint8_t ch) {
     else if (ch >= '0' && ch <='9') {
         return  ch - '0' + 27;
     }
-    else return  0; // Not got that char so space.
+    else if (ch == ':') {
+        return 37; // Índice para '!'
+    }
+    else if (ch == '.') {
+        return 38; // Índice para '.'
+    }
+    else {
+        return 0; // Se o caractere não estiver definido, retorna "nada" (espaço)
+    }
 }
 
 static void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch) {

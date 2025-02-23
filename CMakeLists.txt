@@ -54,7 +54,7 @@ target_include_directories(U7T_JVPdO PRIVATE
 )
 
 # Add any user requested libraries
-target_link_libraries(U7T_JVPdO pico_stdlib hardware_i2c hardware_adc  hardware_dma hardware_pwm hardware_clocks)
+target_link_libraries(U7T_JVPdO pico_stdlib hardware_i2c hardware_adc hardware_dma hardware_pwm hardware_clocks)
 
 pico_add_extra_outputs(U7T_JVPdO)
 

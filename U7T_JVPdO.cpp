@@ -48,9 +48,10 @@ volatile bool btn_b_pressed = false;
 volatile bool sel_pressed = false;
 volatile uint64_t last_interrupt_time = 0;
 
-uint8_t saved_page = 3;
-uint32_t mic;
-uint64_t last_time;
+uint8_t saved_page = 3; // Página salva pelo botão B
+uint64_t last_time; // Último tempo de leitura do ADC
+
+uint8_t buf[SSD1306_BUF_LEN]; // Buffer para renderização do display
 
 // Variáveis globais para acúmulo de tempo (em segundos)
 float elapsed85 = 0.0f;
@@ -61,6 +62,8 @@ float elapsed97 = 0.0f;
 
 // Limite de volume máximo para alarme imediato (em dB)
 #define MAX_VOLUME_THRESHOLD 100.0f
+
+float safe_values[5] = {0}; // Array de tempos seguros para cada faixa (85,88,91,94,97 dB)
 
 // Contadores de alarmes
 int alarmCountSafe = 0;      // Alarmes disparados por exposição excessiva
@@ -81,8 +84,7 @@ float mic_readings[NUM_READINGS] = {0}; // Buffer para as 10 últimas leituras
 int reading_index = 0;                  // Índice do próximo elemento a ser escrito
 float max_peak = 0.0f;
 
-uint8_t buf[SSD1306_BUF_LEN];
-
+// Estrutura para armazenar as notas musicais
 typedef struct
 {
   int hours;
@@ -98,6 +100,7 @@ struct render_area frame_area = {
   end_page : SSD1306_NUM_PAGES - 1
 };
 
+// Estrutura para armazenar as notas musicais
 typedef struct
 {
   float max_hours;
@@ -146,11 +149,11 @@ void play_tone(uint pin, uint frequency, uint duration_ms)
   float eq_factor;
   if (frequency < 3000)
   {
-    eq_factor = 0.5; // +6dB em graves
+    eq_factor = 0.1; // +6dB em graves
   }
   else if (frequency < 4000)
   {
-    eq_factor = 0.2; // 0dB
+    eq_factor = 0.1; // 0dB
   }
   else
   {
@@ -215,19 +218,9 @@ void triggerAlarm(const char *reason)
   sleep_ms(500);
 }
 
-uint32_t read_adc(uint8_t adc){
-  // A leitura vai de 0 a 4095
-  printf("aqui\n");
-  adc_fifo_setup(
-    true, // Habilitar FIFO
-    true, // Habilitar request de dados do DMA
-    1, // Threshold para ativar request DMA é 1 leitura do ADC
-    false, // Não usar bit de erro
-    false // Não fazer downscale das amostras para 8-bits, manter 12-bits.
-  );
-  adc_set_clkdiv(96.f);
-  
-  adc_select_input(adc);
+// Função para ler o valor do ADC
+uint32_t read_adc(uint8_t adc_channel) {
+  adc_select_input(adc_channel);
   return adc_read();
 }
 
@@ -247,6 +240,7 @@ float mic_power()
   return avg / medidas;
 }
 
+// Calcula a intensidade sonora em dB a partir da tensão lida no ADC
 float get_intensity(float v)
 {
   if (v == 0)
@@ -255,6 +249,7 @@ float get_intensity(float v)
     return 20 * log10((3.3 * v) / 0.033);
 }
 
+// Função para encontrar a cor do LED baseado na intensidade sonora
 void find_led(float db)
 {
   if (db <= 70.0f)
@@ -300,11 +295,13 @@ void config_pins()
   gpio_set_irq_enabled_with_callback(BTNA, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
   gpio_set_irq_enabled_with_callback(BTNB, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
   gpio_set_irq_enabled_with_callback(SEL_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
-  // gpio_init(BTNA);  // Inicializa o pino do botão A
-  // gpio_init(BTNB);  // Inicializa o pino do botão B
+
   adc_gpio_init(Y_PIN);
   adc_gpio_init(X_PIN);
   adc_gpio_init(MIC_PIN);
+  adc_init(); // Inicializa o módulo ADC
+  adc_set_clkdiv(96.0f); // Configura o divisor de clock do ADC
+
   pwm_init_buzzer(BUZZA);
   pwm_init_buzzer(BUZZB);
   // gpio_init(SEL_PIN);
@@ -347,9 +344,9 @@ void init_i2c()
 uint8_t joystick() // Função para controlar o menu com o joystick
 { 
   int horz = (200 * read_adc(ADC_HORZ) / 4094);
-  printf("aqui\n");
+  printf("aquij1\n");
   int vert = (200 * read_adc(ADC_VERT) / 4094);
-  printf("aqui\n");
+  printf("aquij2\n");
   horz -= 100;
   vert -= 100;
   uint8_t page = 3;
@@ -366,7 +363,6 @@ uint8_t joystick() // Função para controlar o menu com o joystick
     page = 4;
   else if (horz > 10 && horz > vert)
     page = 5;
-  printf("aqui\n");
   bool savePressed = gpio_get(BTNB); //////////////////////////
   if (btn_b_pressed == true)
   {
@@ -379,6 +375,7 @@ uint8_t joystick() // Função para controlar o menu com o joystick
   return page;
 }
 
+// Função para limpar o display
 void clear_display(uint8_t *buf, struct render_area *frame_area)
 {
   memset(buf, 0, SSD1306_BUF_LEN);
@@ -425,6 +422,7 @@ void display_rasp(uint8_t *buf, struct render_area *frame_area)
   sleep_ms(2000);
 }
 
+// Função para testar a frequência do buzzer
 void frequency_sweep_test(uint pin)
 {
   printf("Iniciando teste de frequencia:\n");
@@ -445,8 +443,6 @@ void init_display()
 
   // Zera o display
   clear_display(buf, &frame_area);
-
-  // frequency_sweep_test(BUZZA);
 
   // Sequência de introdução: pisca a tela 3 vezes
   for (int i = 0; i < 3; i++)
@@ -529,16 +525,14 @@ TimeComponents getTimeComponents(double elapsed)
   return tc;
 }
 
-const float safe_values[] = {};
 void calculate_safe_values()
 {
-  // Calcula o tempo seguro (em segundos) para cada faixa, usando calculate_safe_exposure()
-  float safe85 = calculate_safe_exposure(85.0f) * 3600.0f;
-  float safe88 = calculate_safe_exposure(88.0f) * 3600.0f;
-  float safe91 = calculate_safe_exposure(91.0f) * 3600.0f;
-  float safe94 = calculate_safe_exposure(94.0f) * 3600.0f;
-  float safe97 = calculate_safe_exposure(97.0f) * 3600.0f;
-  float safe_values[] = {safe85, safe88, safe91, safe94, safe97};
+  // Calcula o tempo seguro (em segundos) para cada faixa
+  safe_values[0] = calculate_safe_exposure(85.0f) * 3600.0f;
+  safe_values[1] = calculate_safe_exposure(88.0f) * 3600.0f;
+  safe_values[2] = calculate_safe_exposure(91.0f) * 3600.0f;
+  safe_values[3] = calculate_safe_exposure(94.0f) * 3600.0f;
+  safe_values[4] = calculate_safe_exposure(97.0f) * 3600.0f;
   return;
 }
 
@@ -549,14 +543,14 @@ void loop_display()
   if (time_us_64() - last_update < 99000)
     return;
   last_update = time_us_64();
-  printf("aqui\n");
+  printf("aqui1\n");
   uint8_t page = joystick();
-  printf("aqui\n");
+  printf("aqui2\n");
   if (page == 3)
   {
     page = saved_page;
   }
-  printf("aqui\n");
+  printf("aqui3\n");
   float avg = mic_power();
   float intensity = get_intensity(avg);
   if (intensity > max_peak)
@@ -599,7 +593,6 @@ void loop_display()
     {
       alarmCountSafe++;
       triggerAlarm("Temp Expos 97dB");
-      //           "Ultimo  Motivo:"
       alarmActive = true;
     }
     else if (elapsed94 >= safe_values[3])
@@ -650,11 +643,11 @@ void loop_display()
   case 1:
   {
     // Variáveis locais ao case 1
-    char volume_str[10], tempo_str[10];
+    char volume_str[30], tempo_str[30];
 
     // Formatação numérica
     snprintf(volume_str, sizeof(volume_str), "     %.2f dB   ", intensity);
-    snprintf(tempo_str, sizeof(tempo_str), "     %.2f h    ", limit.max_hours);
+    snprintf(tempo_str, sizeof(tempo_str),   "     %.2f h    ", limit.max_hours);
 
     // Array de texto com escopo local
     const char *text[] = {
@@ -854,7 +847,8 @@ int main()
   config_pins();
   init_i2c();
   init_display();
-  dma_config();
+  adc_init();
+  //dma_config();
   calculate_safe_values();
 
   while (true)
