@@ -1,161 +1,108 @@
-# SIMIS - Sistema de Monitoramento de Intensidade Sonora
+# Monitor de Intensidade Sonora (SIMIS)
 
-![Diagrama de blocos simplificado](https://via.placeholder.com/800x400.png?text=Diagrama+do+Hardware)  
-*Projeto para Raspberry Pi Pico que monitora níveis de pressão sonora (dB) através de um microfone, com interface gráfica OLED, controle por joystick e alarmes sonoros/visuais.*
+## Descrição do Projeto
+
+Este projeto é um **Sistema de Monitoramento de Intensidade Sonora (SIMIS)** desenvolvido para o **Raspberry Pi Pico**. O objetivo principal é medir e exibir o nível de som ambiente em decibéis (dB) e alertar o usuário sobre exposições perigosas a ruídos elevados. O sistema conta com:
+
+- **Microfone** para captação do som ambiente.
+- **Display OLED** para exibição de informações.
+- **LEDs RGB** para indicar diferentes níveis de som.
+- **Buzzer** para alertas sonoros.
+- **Botões e joystick** para interação do usuário.
+- **Sistema de alarme** baseado na duração e intensidade da exposição sonora.
+
+## Periféricos Utilizados
+
+| Periférico                            | Função                                     |
+| ------------------------------------- | ------------------------------------------ |
+| **Microfone** (ADC)                   | Captura o som ambiente                     |
+| **Display OLED (I2C)**                | Exibe informações do sistema               |
+| **LED RGB**                           | Indica intensidade sonora                  |
+| **Buzzer**                            | Emite alertas sonoros                      |
+| **Botões A e B**                      | Interagem com o sistema                    |
+| **Joystick**                          | Navega entre as telas                      |
+| **ADC** (Conversor Analógico-Digital) | Lê valores do microfone                    |
+| **DMA** (Acesso Direto à Memória)     | Processa dados do microfone com eficiência |
+
+## Estrutura do Código
+
+O código está organizado em diferentes seções para lidar com a inicialização dos periféricos, captura e processamento de dados, exibição no display e ativação de alarmes.
+
+### 1. **Definição de Pinos e Variáveis Globais**
+
+Os pinos do Raspberry Pi Pico são definidos no início do código, incluindo os pinos do microfone, OLED, LEDs, botões e joystick. Também são criadas variáveis para armazenar leituras do microfone e controlar os tempos de exposição sonora.
+
+| Componente       | Pino no Raspberry Pi Pico |
+|------------------|--------------------------|
+| **Microfone**    | GPIO 28                   |
+| **OLED SDA**     | GPIO 14                   |
+| **OLED SCL**     | GPIO 15                   |
+| **Botão A**      | GPIO 5                    |
+| **Botão B**      | GPIO 6                    |
+| **LED Vermelho** | GPIO 13                   |
+| **LED Verde**    | GPIO 11                   |
+| **LED Azul**     | GPIO 12                   |
+| **Buzzer A**     | GPIO 21                   |
+| **Buzzer B**     | GPIO 10                   |
+| **Joystick X**   | GPIO 27                   |
+| **Joystick Y**   | GPIO 26                   |
+| **Joystick SEL** | GPIO 22                   |
+
+### 2. **Inicialização dos Periféricos**
+
+As funções `config_pins()`, `init_i2c()`, `init_display()` e `dma_config()` configuram os pinos, inicializam o I2C para o OLED e preparam o DMA para processamento eficiente dos dados do ADC.
+
+### 3. **Captura e Processamento dos Dados do Microfone**
+
+A leitura do microfone é feita pela função `mic_power()`, que calcula a potência do sinal. A intensidade sonora em dB é calculada pela função `get_intensity()`.
+
+### 4. **Exibição de Dados no Display OLED**
+
+O display mostra diferentes informações:
+
+- Intensidade sonora atual
+- Tempo de exposição acumulado
+- Gráfico das últimas leituras
+- Histórico de alarmes
+  A função `show_text()` é usada para exibir mensagens formatadas na tela.
+
+### 5. **Indicação Visual e Sonora**
+
+A função `find_led()` controla os LEDs RGB para indicar o nível de som:
+
+- **Verde** (<70 dB): Som seguro
+- **Amarelo** (70-85 dB): Alerta moderado
+- **Vermelho** (>85 dB): Som perigoso
+
+A função `play_tone()` emite sons com o buzzer para alertas.
+
+### 6. **Detecção de Alarmes**
+
+A função `triggerAlarm()` é ativada quando os níveis de som são perigosos. Ela exibe mensagens no OLED, acende LEDs vermelhos e toca sons de alerta.
+
+### 7. **Loop Principal**
+
+A função `loop_display()` é executada continuamente para atualizar as leituras do microfone, calcular tempos de exposição e verificar condições para alarmes.
+
+## Funcionamento
+
+1. O sistema é iniciado e exibe a tela inicial.
+2. O microfone captura o som e converte em um valor de dB.
+3. O display OLED mostra as leituras e informações.
+4. Se os níveis de som forem perigosos por muito tempo, um alarme é ativado.
+5. O usuário pode navegar entre telas com o joystick.
+6. LEDs RGB indicam os níveis de som.
+
+## Melhorias Futuras
+
+- Armazenamento dos dados em um **cartão SD**.
+- Integração com **Wi-Fi/Bluetooth** para monitoramento remoto.
+- Implementação de um **modo de economia de energia**.
+
+## Conclusão
+
+Este projeto demonstra como o Raspberry Pi Pico pode ser utilizado para medição e monitoramento sonoro, utilizando diversos periféricos. O sistema pode ser expandido para aplicações de segurança ocupacional, proteção auditiva e monitoramento ambiental.
 
 ---
 
-## 📋 Visão Geral
-Monitora níveis de dB em tempo real, calcula tempos seguros de exposição (baseado em normas NIOSH) e dispara alarmes para condições perigosas. Desenvolvido em C para Raspberry Pi Pico.
-
----
-
-## 🛠 Hardware Necessário
-| Componente           | Função                              |
-|----------------------|-------------------------------------|
-| Raspberry Pi Pico    | Microcontrolador principal          |
-| Microfone (ADC)      | Captura de áudio                    |
-| OLED 128x64 (I2C)    | Exibição de dados                   |
-| Joystick analógico   | Navegação no menu                   |
-| LEDs RGB             | Feedback visual de intensidade      |
-| Buzzer passivo       | Alarmes sonoros                     |
-
----
-
-## 🎯 Funcionalidades Principais
-- **Medição contínua de dB** (60-110 dB)
-- **Cálculo de tempo seguro** de exposição (NIOSH)
-- **Alarmes** para:
-  - Volume instantâneo >100 dB
-  - Tempo acumulado em faixas críticas
-- **Gráfico temporal** das últimas leituras
-- **Histórico detalhado** por faixa de intensidade
-- **Menu interativo** com 5 telas navegáveis
-
----
-
-## 🧩 Estrutura do Código
-
-### 1. Configuração Inicial (`config_pins()`)
-```c
-void config_pins() {
-  // Inicializa GPIOs e ADCs
-  gpio_init(LED_R);
-  adc_gpio_init(MIC_PIN);
-  
-  // Configura interrupções para botões
-  gpio_set_irq_enabled_with_callback(BTNA, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
-  
-  // PWM para buzzer
-  pwm_init_buzzer(BUZZA);
-}
-
-2. Processamento de Áudio
-c
-Copy
-float get_intensity(float v) {
-  return 20 * log10((3.3 * v)/0.033); // Conversão para dB
-}
-
-void find_led(float db) {
-  if(db <= 70) GPIO_OUT(LED_G, 1);       // Verde: <70 dB
-  else if(db <= 85) GPIO_OUT(LED_R, 1);  // Vermelho: 70-85 dB
-  else GPIO_OUT(LED_B, 1);               // Azul: >85 dB
-}
-Converte tensão do ADC para escala logarítmica (dB)
-
-Sistema de cores para feedback imediato
-
-3. Lógica de Alarmes
-c
-Copy
-void triggerAlarm(const char *reason) {
-  play_music(BUZZB, alarm_melody, ...); // Toca melodia
-  gpio_put(LED_R, 1);                   // LED vermelho
-  show_text("ALARME ATIVADO", ...);      // Exibe motivo
-}
-Condições de disparo:
-
-Volume instantâneo >100 dB
-
-Exposição acumulada em faixas:
-
-85 dB: 8 horas
-
-88 dB: 4 horas (-3dB = ½ tempo)
-
-91 dB: 2 horas
-
-4. Interface Gráfica (loop_display())
-c
-Copy
-void loop_display() {
-  switch(page) {
-    case 1: // Tela principal
-      show_text(intensity, max_hours...);
-    case 2: // Gráfico temporal
-      DrawLine(buf, x1, y1, x2, y2);
-  }
-}
-Tela	Conteúdo
-1	Status atual (dB/tempo seguro)
-2	Gráfico das últimas leituras
-3	Instruções de uso
-4	Tempos acumulados por faixa
-5	Histórico de alarmes
-5. Gestão de Tempo de Exposição
-c
-Copy
-float calculate_safe_exposure(float db) {
-  if(db <= 70) return INFINITY;
-  return 8 * pow(0.5, (db-85)/3); // NIOSH
-}
-Exemplo de redução:
-
-85 dB → 8 horas
-
-88 dB → 4 horas
-
-91 dB → 2 horas
-
-94 dB → 1 hora
-
-97 dB → 30 min
-
-🔧 Customização
-Parâmetro	Variável	Valores Típicos
-Limite volume máximo	MAX_VOLUME_THRESHOLD	90-110 dB
-Taxa de atualização	NUM_READINGS	10-50 amostras
-Tempos de exposição	calculate_safe_exposure	Ajustar base/step
-Melodias de alarme	alarm_melody[]	Editar notas/musics.h
-📦 Dependências
-pico-sdk
-
-Biblioteca SSD1306 (ssd1306_font.h, images.h)
-
-Arquivos customizados (display.h, musics.h)
-
-⚙ Como Usar
-Conectar hardware conforme pinagem definida
-
-Compilar com pico-sdk
-
-Navegação:
-
-Joystick horizontal: muda telas
-
-Botão B: fixa tela atual
-
-Botão A: limpa alarmes
-
-mermaid
-Copy
-graph TD
-  A[Leitura ADC] --> B{Processamento}
-  B --> C[Display]
-  B --> D[Alarmes]
-  C --> E[Gráfico]
-  D --> F[LEDs/Buzzer]
-📄 Licença
-MIT License - jvpo | 2023
-Livro para uso e modificação, com atribuição ao autor original.
+**Desenvolvido por:** João Victor Pomiglio de Oliveira
