@@ -63,6 +63,8 @@ float elapsed97 = 0.0f;
 // Limite de volume máximo para alarme imediato (em dB)
 #define MAX_VOLUME_THRESHOLD 100.0f
 
+float adc_baseline = 2047.5f; // Valor inicial médio do ADC (12 bits)
+
 float safe_values[5] = {0}; // Array de tempos seguros para cada faixa (85,88,91,94,97 dB)
 
 // Contadores de alarmes
@@ -231,10 +233,9 @@ float mic_power()
   uint32_t sound = 0;
   uint8_t medidas = 50;
 
-  for (uint i = 0; i < medidas; ++i)
-  {
+  for (uint i = 0; i < medidas; ++i) {
     sound = read_adc(ADC_MIC);
-    avg += abs(sound - 2047.5);
+    avg += abs(sound - adc_baseline); // Subtrai a baseline calibrada
   }
 
   return avg / medidas;
@@ -246,7 +247,7 @@ float get_intensity(float v)
   if (v == 0)
     return 0.0;
   else
-    return 20 * log10((3.3 * v) / 0.033);
+    return 20 * log10((3.3 * v) / 0.05);
 }
 
 // Função para encontrar a cor do LED baseado na intensidade sonora
@@ -831,6 +832,23 @@ void dma_config()
   return;
 }
 
+void calibrate_microphone() {
+  const uint32_t num_samples = 500;
+  uint32_t total = 0;
+  
+  // Amostra o ADC em condições silenciosas
+  for (int i = 0; i < num_samples; i++) {
+      total += read_adc(ADC_MIC);
+      sleep_us(100); // Pequeno intervalo entre amostras
+  }
+  adc_baseline = (float)total / num_samples;
+  
+  // Feedback visual
+  gpio_put(LED_B, 1);
+  sleep_ms(200);
+  gpio_put(LED_B, 0);
+}
+
 void test()
 {
   if (gpio_get(SEL_PIN) == 0)
@@ -849,6 +867,7 @@ int main()
   init_display();
   adc_init();
   //dma_config();
+  calibrate_microphone();
   calculate_safe_values();
 
   while (true)
