@@ -146,9 +146,9 @@ void SSD1306_scroll(bool on) {
     uint8_t cmds[] = {
         SSD1306_SET_HORIZ_SCROLL | 0x00,
         0x00, // dummy byte
-        0x00, // start page 0
+        0x02, // start page 0
         0x00, // time interval
-        0x03, // end page 3 SSD1306_NUM_PAGES ??
+        0x05, // end page 3 SSD1306_NUM_PAGES ??
         0x00, // dummy byte
         0xFF, // dummy byte
         (uint8_t)(SSD1306_SET_SCROLL | (on ? 0x01 : 0)) // Start/stop scrolling

@@ -1,17 +1,20 @@
-const uint music_notes[] = {
-    // Notas originais multiplicadas por 2^OCTAVE_SHIFT
-    392*8, 392*8, 392*8, 311*8, 466*8, 392*8, 311*8, 466*8, 392*8,
-    587*8, 587*8, 587*8, 622*8, 466*8, 369*8, 311*8, 466*8, 392*8,
-    784*8, 392*8, 392*8, 784*8, 698*8, 659*8, 622*8, 587*8, 659*8,
-    415*8, 466*8, 523*8, 587*8, 622*8, 659*8, 698*8,
-    311*8, 392*8, 466*8, 523*8, 587*8
+// Em musics.h (ou no header apropriado)
+typedef struct {
+    uint frequency;
+    uint duration; 
+} Note;
+
+// Array de notas modificado para usar a struct
+const Note intro_melody[] = {
+    {.frequency = 392*8, .duration = 550},
+    {.frequency = 311*8, .duration = 500},
+    {.frequency = 466*8, .duration = 250},
+    {.frequency = 392*8, .duration = 750}
 };
 
-// Durações em milissegundos (valores calibrados)
-const uint note_duration[] = {
-    750, 750, 750, 500, 250, 750, 500, 250, 1500,  // Intro
-    750, 750, 750, 500, 250, 750, 500, 250, 1500,  // Seção 1
-    750, 500, 250, 750, 500, 250, 250, 250, 750,   // Seção 2
-    500, 250, 250, 250, 250, 250, 750,             // Transição
-    500, 750, 500, 250, 1500                       // Final
+const Note alarm_melody[] = {
+    {.frequency = 311*8, .duration = 500},
+    {.frequency = 466*8, .duration = 500},
+    {.frequency = 311*8, .duration = 500},
+    {.frequency = 466*8, .duration = 500}
 };
