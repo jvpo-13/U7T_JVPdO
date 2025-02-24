@@ -21,28 +21,26 @@
 #include "display.h"
 #include "musics.h"
 
-// Pino e canal do microfone no ADC.
+// Pino e canal do microfone e joystick no ADC.
 const uint8_t ADC_VERT = 0;
 const uint8_t ADC_HORZ = 1;
 const uint8_t ADC_MIC = 2;
 
 const uint MIC_PIN = 28;     // Pino do Microfone
-const uint I2C_SDA_PIN = 14; // Pino do botão A
-const uint I2C_SCL_PIN = 15; // Pino do botão B
-const uint BTNA = 5;         // Pino do botão A
-const uint BTNB = 6;         // Pino do botão B
+const uint I2C_SDA_PIN = 14; // Pino do SDA do Display
+const uint I2C_SCL_PIN = 15; // Pino do SCL do Display
+const uint BTNA = 5;         // Pino do Botão A
+const uint BTNB = 6;         // Pino do Botão B
 const uint LED_R = 13;       // Pino do LED_R
 const uint LED_G = 11;       // Pino do LED_R
 const uint LED_B = 12;       // Pino do LED_R
-const uint BUZZA = 21;       //
-const uint BUZZB = 10;       //
-const uint Y_PIN = 26;
-const uint X_PIN = 27;
-const uint SEL_PIN = 22;
-const uint OLED_SDA_PIN = 14; // Pino de dados (SDA)
-const uint OLED_SCL_PIN = 15; // Pino de clock (SCL)
+const uint BUZZA = 21;       // Pino do Buzzer A
+const uint BUZZB = 10;       // Pino do Buzzer B
+const uint Y_PIN = 26;       // Pino da Posição Y do Joystick
+const uint X_PIN = 27;       // Pino da Posição X do Joystick
+const uint SEL_PIN = 22;     // Pino do Botão do Joystick
 
-// Botões
+// Interrupções dos Botões
 volatile bool btn_a_pressed = false;
 volatile bool btn_b_pressed = false;
 volatile bool sel_pressed = false;
