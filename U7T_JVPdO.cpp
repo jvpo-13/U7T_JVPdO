@@ -11,7 +11,6 @@
 
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
-#include "hardware/dma.h"
 #include "hardware/i2c.h"
 #include "hardware/clocks.h"
 #include "hardware/pwm.h"
@@ -74,10 +73,6 @@ char lastAlarmReason[30] = {0};
 
 // Variável de controle para evitar alarmes repetidos enquanto a condição persistir
 bool alarmActive = false;
-
-// Canal e configurações do DMA
-uint dma_channel;
-dma_channel_config dma_cfg;
 
 #define NUM_READINGS 10
 float mic_readings[NUM_READINGS] = {0}; // Buffer para as 10 últimas leituras
@@ -814,22 +809,6 @@ void loop_display()
   }
 }
 
-void dma_config()
-{
-  // Tomando posse de canal do DMA.
-  dma_channel = dma_claim_unused_channel(true);
-
-  // Configurações do DMA.
-  dma_cfg = dma_channel_get_default_config(dma_channel);
-  channel_config_set_transfer_data_size(&dma_cfg, DMA_SIZE_16); // Tamanho da transferência é 16-bits (usamos uint16_t para armazenar valores do ADC)
-  channel_config_set_read_increment(&dma_cfg, false);           // Desabilita incremento do ponteiro de leitura (lemos de um único registrador)
-  channel_config_set_write_increment(&dma_cfg, true);           // Habilita incremento do ponteiro de escrita (escrevemos em um array/buffer)
-  channel_config_set_dreq(&dma_cfg, DREQ_ADC);                  // Usamos a requisição de dados do ADC
-
-  printf("Configuracoes completas!\n");
-  return;
-}
-
 void calibrate_microphone() {
   const uint32_t num_samples = 500;
   uint32_t total = 0;
@@ -864,7 +843,6 @@ int main()
   init_i2c();
   init_display();
   adc_init();
-  //dma_config();
   calibrate_microphone();
   calculate_safe_values();
 

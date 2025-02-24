@@ -13,16 +13,17 @@ Este projeto é um **Sistema de Monitoramento de Intensidade Sonora (SIMIS)** de
 
 ## Periféricos Utilizados
 
-| Periférico                            | Função                                     |
-| ------------------------------------- | ------------------------------------------ |
-| **Microfone** (ADC)                   | Captura o som ambiente                     |
-| **Display OLED (I2C)**                | Exibe informações do sistema               |
-| **LED RGB**                           | Indica intensidade sonora                  |
-| **Buzzer**                            | Emite alertas sonoros                      |
-| **Botões A e B**                      | Interagem com o sistema                    |
-| **Joystick**                          | Navega entre as telas                      |
-| **ADC** (Conversor Analógico-Digital) | Lê valores do microfone                    |
-| **DMA** (Acesso Direto à Memória)     | Processa dados do microfone com eficiência |
+| Periférico                               | Função                                     |
+| ---------------------------------------- | ------------------------------------------ |
+| **Microfone** (ADC)                      | Captura o som ambiente                     |
+| **Display OLED (I2C)**                   | Exibe informações do sistema               |
+| **LED RGB**                              | Indica intensidade sonora                  |
+| **Buzzer**                               | Emite alertas sonoros                      |
+| **Botões A e B**                         | Interagem com o sistema                    |
+| **Joystick**                             | Navega entre as telas                      |
+| **ADC** (Conversor Analógico-Digital)    | Lê valores do microfone                    |
+| **PWM** (Modulação por Largura de Pulso) | Ajusta a duração dos pulsos de um sinal    |
+| **I2C** (Inter-Integrated Circuit)       | Protocolo de comunicação de troca de dados |
 
 ## Estrutura do Código
 
